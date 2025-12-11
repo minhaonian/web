@@ -1,0 +1,495 @@
+<!DOCTYPE html><html lang="zh-Hant"><head><meta name="x-poe-datastore-behavior" content="local_only"><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>閔語心 - 科學測驗全方位診斷報告</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --highlight-bg: #eaf2f8;
+            --wrong-color: #c0392b;
+            --correct-color: #27ae60;
+            --text-color: #333;
+            --border-radius: 8px;
+            --section-header-bg: #f4f6f7;
+        }
+
+        body {
+            font-family: "Microsoft JhengHei", "Heiti TC", sans-serif;
+            background-color: #f0f2f5;
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .header h1 { margin: 0; color: var(--primary-color); font-size: 1.8rem; }
+        .header .subtitle { color: #7f8c8d; margin-top: 10px; }
+        
+        .score-badge {
+            display: inline-block;
+            background: var(--wrong-color);
+            color: white;
+            padding: 5px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            margin-top: 15px;
+            font-size: 1.1rem;
+        }
+
+        /* Summary Section */
+        .summary-box {
+            background-color: #fff8e1;
+            border-left: 5px solid #ffc107;
+            padding: 20px;
+            margin-bottom: 40px;
+            border-radius: 4px;
+        }
+        .summary-title { font-weight: bold; color: #d35400; font-size: 1.1rem; margin-bottom: 10px; }
+
+        /* Section Headers */
+        .section-title {
+            background: var(--section-header-bg);
+            padding: 10px 15px;
+            border-radius: var(--border-radius);
+            margin-top: 40px;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            font-weight: bold;
+            border-left: 5px solid var(--primary-color);
+        }
+
+        /* Question Card */
+        .q-card {
+            border: 1px solid #e0e0e0;
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+        
+        .q-header {
+            background: #fff;
+            padding: 15px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            border-bottom: 1px solid transparent;
+        }
+        .q-header:hover { background-color: #fafafa; }
+        .q-card.active .q-header { border-bottom: 1px solid #e0e0e0; background-color: #f8f9fa; }
+
+        .q-tag {
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: 10px;
+            color: white;
+            font-weight: normal;
+        }
+        .tag-read { background-color: #9b59b6; } /* 閱讀/圖表 */
+        .tag-calc { background-color: #34495e; } /* 計算 */
+        .tag-logic { background-color: #e67e22; } /* 邏輯/概念 */
+        .tag-vocab { background-color: #16a085; } /* 名詞/常識 */
+
+        .q-body {
+            display: none;
+            padding: 20px;
+            background-color: #fff;
+        }
+        .q-body.active { display: block; }
+
+        /* Source Material Section */
+        .source-material {
+            background-color: var(--highlight-bg);
+            border-left: 4px solid var(--accent-color);
+            padding: 15px;
+            margin: 15px 0;
+            font-size: 0.95rem;
+            color: #444;
+            font-style: italic;
+            position: relative;
+        }
+        .source-label {
+            font-style: normal;
+            font-weight: bold;
+            font-size: 0.8rem;
+            color: var(--accent-color);
+            display: block;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        /* Answer Comparison */
+        .ans-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .ans-box { padding: 12px; border-radius: 6px; font-size: 0.95rem; }
+        .ans-student { background-color: #fdecea; border: 1px solid #fadbd8; }
+        .ans-correct { background-color: #e8f8f5; border: 1px solid #d1f2eb; }
+        
+        .ans-label { font-weight: bold; display: block; margin-bottom: 5px; font-size: 0.85rem; }
+
+        /* Teacher Analysis */
+        .analysis {
+            border-top: 1px dashed #ccc;
+            padding-top: 15px;
+            font-size: 0.95rem;
+            color: #555;
+        }
+        .analysis strong { color: var(--primary-color); }
+
+        @media (max-width: 600px) {
+            .ans-comparison { grid-template-columns: 1fr; }
+            .container { padding: 20px; }
+        }
+    </style>
+<script src="https://puc.poecdn.net/authenticated_preview_page/syncedState.3f7572448765332f3047.js"></script></head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>科學測驗學情分析報告</h1>
+        <div class="subtitle">學生：閔語心 (S2A) | 測驗日期：2023/10/24</div>
+        <div class="score-badge">得分：31 / 100</div>
+    </div>
+
+    <div class="summary-box">
+        <div class="summary-title">👩‍🏫 老師的重點反饋</div>
+        <p>本次測驗顯示語心在<strong>「閱讀理解」</strong>與<strong>「信息提取」</strong>上有較大進步空間。許多失分並非知識太難，而是因為沒有仔細閱讀題目提供的<strong>原文線索</strong>或<strong>圖表資訊</strong>。下方的詳細分析中，我們特別標註了<strong>「試卷原文/提示」</strong>，請家長與語心一起對照，會發現答案其實往往就藏在題目裡。</p>
+    </div>
+
+    <!-- Section 1 -->
+    <h3 class="section-title">一、生命科學與健康 (酒精中毒)</h3>
+
+    <!-- Q1 -->
+    <div class="q-card">
+        <div class="q-header" onclick="toggleQ(this)">
+            <span>Q1. 酒精中毒的生理影響 <span class="q-tag tag-read">閱讀理解</span></span>
+            <span style="color:var(--wrong-color)">❌</span>
+        </div>
+        <div class="q-body">
+            <p><strong>題目：</strong>酒精中毒後的症狀（如走路不穩、言語不清），主要是因為人體哪一系統受影響？</p>
+            <div class="source-material">
+                <span class="source-label">📖 試卷原文節選：</span>
+                「...酒精進入血液後，會迅速到達大腦，抑制<strong>中樞神經</strong>的運作，導致人體平衡感喪失、反應變慢...」
+            </div>
+            <div class="ans-comparison">
+                <div class="ans-box ans-student">
+                    <span class="ans-label" style="color:var(--wrong-color)">語心的答案：</span>
+                    D. 消化系統
+                </div>
+                <div class="ans-box ans-correct">
+                    <span class="ans-label" style="color:var(--correct-color)">正確答案：</span>
+                    A. 神經系統
+                </div>
+            </div>
+            <div class="analysis">
+                <strong>💡 診斷：</strong> 語心混淆了「吸收途徑」（喝下去-&gt;消化）與「中毒症狀」（頭暈-&gt;大腦）。原文已明確提到「大腦」與「神經」，這顯示她憑直覺作答，未閱讀題幹背景。
+            </div>
+        </div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="q-card">
+        <div class="q-header" onclick="toggleQ(this)">
+            <span>Q3. 酒精濃度換算 <span class="q-tag tag-calc">計算/審題</span></span>
+            <span style="color:var(--wrong-color)">❌</span>
+        </div>
+        <div class="q-body">
+            <p><strong>題目：</strong>呼氣酒精測試標準為每公升 0.5 毫克 (0.5mg/L)，請問換算成體積百分比約為多少？</p>
+            <div class="source-material">
+                <span class="source-label">🔢 題目數據提示：</span>
+                「標準：0.5 mg/L (即每 1000 ml 氣體中含有 0.5 mg 酒精)」<br>
+                <em>(提示：需進行單位換算)</em>
+            </div>
+            <div class="ans-comparison">
+                <div class="ans-box ans-student">
+                    <span class="ans-label" style="color:var(--wrong-color)">語心的答案：</span>
+                    0.5 %
+                </div>
+                <div class="ans-box ans-correct">
+                    <span class="ans-label" style="color:var(--correct-color)">正確答案：</span>
+                    0.05 %
+                </div>
+            </div>
+            <div class="analysis">
+                <strong>💡 診斷：</strong> 語心直接抄寫了題目中的數字「0.5」，忽略了單位換算。正確邏輯應為：$0.5 \div 1000 = 0.0005$，轉為百分比即 $0.05\%$。這是典型的審題不清。
+            </div>
+        </div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="q-card">
+        <div class="q-header" onclick="toggleQ(this)">
+            <span>Q4. 酒後洗澡的風險 <span class="q-tag tag-logic">科學解釋</span></span>
+            <span style="color:var(--wrong-color)">❌</span>
+        </div>
+        <div class="q-body">
+            <p><strong>題目：</strong>為什麼酒後不宜立即洗熱水澡？請結合生理機制解釋。</p>
+            <div class="source-material">
+                <span class="source-label">📖 試卷原文提示：</span>
+                「...熱水會使體表<strong>血管擴張</strong>，導致血壓下降，可能造成腦部供血不足...」
+            </div>
+            <div class="ans-comparison">
+                <div class="ans-box ans-student">
+                    <span class="ans-label" style="color:var(--wrong-color)">語心的答案：</span>
+                    「身體會有不合適的反應，可能會昏迷。」
+                </div>
+                <div class="ans-box ans-correct">
+                    <span class="ans-label" style="color:var(--correct-color)">參考答案：</span>
+                    熱水導致血管擴張，血壓下降，腦部缺氧暈倒。
+                </div>
+            </div>
+            <div class="analysis">
+                <strong>💡 診斷：</strong> 語心的回答過於生活化且籠統（「不合適的反應」）。科學問答題必須使用關鍵詞（如：血管擴張、血壓），而非僅描述後果。
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2 -->
+    <h3 class="section-title">二、地球科學 (亞馬遜雨林)</h3>
+
+    <!-- Q5 -->
+    <div class="q-card">
+        <div class="q-header" onclick="toggleQ(this)">
+            <span>Q5. 亞馬遜雨林位置 <span class="q-tag tag-read">圖表判讀</span></span>
+            <span style="color:var(--wrong-color)">❌</span>
+        </div>
+        <div class="q-body">
+            <p><strong>題目：</strong>根據附圖，全球最大的熱帶雨林——亞馬遜雨林位於哪一洲？</p>
+            <div class="source-material">
+                <span class="source-label">🗺️ 試卷地圖資訊：</span>
+                (試卷附有一張世界地圖，在<strong>南美洲</strong>板塊標註了深綠色區域，並寫有 "Amazon" 字樣)
+            </div>
+            <div class="ans-comparison">
+                <div class="ans-box ans-student">
+                    <span class="ans-label" style="color:var(--wrong-color)">語心的答案：</span>
+                    D. 歐洲
+                </div>
+                <div class="ans-box ans-correct">
+                    <span class="ans-label" style="color:var(--correct-color)">正確答案：</span>
+                    A. 美洲 (南美洲)
+                </div>
+            </div>
+            <div class="analysis">
+                <strong>💡 診斷：</strong> 嚴重缺乏基礎地理常識，且未仔細看圖。地圖上明確標示了位置，這分丟得非常可惜。
+            </div>
+        </div>
+    </div>
+
+    <!-- Q6 -->
+    <div class="q-card">
+        <div class="q-header" onclick="toggleQ(this)">
+            <span>Q6. 熱帶雨林氣候特徵 <span class="q-tag tag-read">圖表判讀</span></span>
+            <span style="color:var(--wrong-color)">❌</span>
+        </div>
+        <div class="q-body">
+            <p><strong>題目：</strong>根據附圖的氣候圖，熱帶雨林的氣候特徵為何？</p>
+            <div class="source-material">
+                <span class="source-label">📊 試卷圖表資訊：</span>
+                (氣溫折線圖顯示：全年溫度皆在 <strong>25°C 以上</strong>；降雨量柱狀圖顯示：全年多雨)
+            </div>
+            <div class="ans-comparison">
+                <div class="ans-box ans-student">
+                    <span class="ans-label" style="color:var(--wrong-color)">語心的答案：</span>
+                    C. 低溫、多雨
+                </div>
+                <div class="ans-box ans-correct">
+                    <span class="ans-label" style="color:var(--correct-color)">正確答案：</span>
+                    B. 高溫、多雨
+                </div>
+            </div>
+            <div class="analysis">
+                <strong>💡 診斷：</strong> 「熱帶」一詞本身即暗示高溫，且圖表顯示溫度很高。語心可能看不懂氣溫折線圖，誤以為那是低溫。
+            </div>
+        </div>
+    </div>
+
+    <!-- Q8 -->
+    <div class="q-card">
+        <div class="q-header" onclick="toggleQ(this)">
+            <span>Q8. 植物產生氧氣的過程 <span class="q-tag tag-vocab">專有名詞</span></span>
+            <span style="color:var(--wrong-color)">❌</span>
+        </div>
+        <div class="q-body">
+            <p><strong>題目：</strong>雨林被稱為「地球之肺」，是因為植物能進行什麼作用釋放氧氣？</p>
+            <div class="source-material">
+                <span class="source-label">📖 課本/試卷定義：</span>
+                「綠色植物利用光能，將二氧化碳和水轉化為養分並釋放氧氣的過程，稱為<strong>光合作用</strong>。」
+            </div>
+            <div class="ans-comparison">
+                <div class="ans-box ans-student">
+                    <span class="ans-label" style="color:var(--wrong-color)">語心的答案：</span>
+                    氧氣反應
+                </div>
+                <div class="ans-box ans-correct">
+                    <span class="ans-label" style="color:var(--correct-color)">正確答案：</span>
+                    光合作用
+                </div>
+            </div>
+            <div class="analysis">
+                <strong>💡 診斷：</strong> 語心知道會有氧氣，但無法準確使用科學專有名詞。科學考試中，自創名詞（如「氧氣反應」）是無法得分的。
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 3 -->
+    <h3 class="section-title">三、物質科學 (酸雨與化學反應)</h3>
+
+    <!-- Q10 -->
+    <div class="q-card">
+        <div class="q-header" onclick="toggleQ(this)">
+            <span>Q10. 酸與碳酸鈣反應 <span class="q-tag tag-logic">核心概念</span></span>
+            <span style="color:var(--wrong-color)">❌</span>
+        </div>
+        <div class="q-body">
+            <p><strong>題目：</strong>酸雨滴在碳酸鈣雕像上產生氣泡，這屬於哪種變化？</p>
+            <div class="source-material">
+                <span class="source-label">📖 試卷提示：</span>
+                「產生了新的氣體物質，物質的本質發生了改變...」
+            </div>
+            <div class="ans-comparison">
+                <div class="ans-box ans-student">
+                    <span class="ans-label" style="color:var(--wrong-color)">語心的答案：</span>
+                    C. 物質三態變化
+                </div>
+                <div class="ans-box ans-correct">
+                    <span class="ans-label" style="color:var(--correct-color)">正確答案：</span>
+                    B. 化學變化
+                </div>
+            </div>
+            <div class="analysis">
+                <strong>💡 診斷：</strong> 語心看到「氣泡（氣體）」就聯想到「氣態/三態變化」。她混淆了物理變化（狀態改變）與化學變化（產生新物質）。
+            </div>
+        </div>
+    </div>
+
+    <!-- Q12 -->
+    <div class="q-card">
+        <div class="q-header" onclick="toggleQ(this)">
+            <span>Q12. 二氧化碳的性質 <span class="q-tag tag-logic">精確表達</span></span>
+            <span style="color:var(--wrong-color)">❌</span>
+        </div>
+        <div class="q-body">
+            <p><strong>題目：</strong>為什麼燃燒化石燃料產生的 CO2 會導致海洋酸化？</p>
+            <div class="source-material">
+                <span class="source-label">📖 課本原理：</span>
+                「二氧化碳溶於水後，會與水反應形成<strong>碳酸 (H2CO3)</strong>，使水溶液呈酸性。」
+            </div>
+            <div class="ans-comparison">
+                <div class="ans-box ans-student">
+                    <span class="ans-label" style="color:var(--wrong-color)">語心的答案：</span>
+                    「因為 CO2 帶有酸性。」
+                </div>
+                <div class="ans-box ans-correct">
+                    <span class="ans-label" style="color:var(--correct-color)">正確答案：</span>
+                    CO2 溶於水形成碳酸。
+                </div>
+            </div>
+            <div class="analysis">
+                <strong>💡 診斷：</strong> 語心的直覺是對的（CO2跟酸有關），但表達不精確。CO2 本身是氣體，不叫「帶有酸性」，而是溶於水才變酸。這題得0分是因為缺乏嚴謹的化學解釋。
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 4 -->
+    <h3 class="section-title">四、物質科學 (密度與浮力 - 重災區)</h3>
+
+    <!-- Q15 -->
+    <div class="q-card">
+        <div class="q-header" onclick="toggleQ(this)">
+            <span>Q15. 氣泡與浮力 <span class="q-tag tag-logic">邏輯推論</span></span>
+            <span style="color:var(--wrong-color)">❌</span>
+        </div>
+        <div class="q-body">
+            <p><strong>題目：</strong>當大量氣泡從水底冒出時，水面上的模型船為何會下沉？請結合「密度」概念解釋。</p>
+            <div class="source-material">
+                <span class="source-label">📖 試卷原文提示：</span>
+                「...氣泡與水混合後，該區域的<strong>平均密度會大幅下降</strong>，導致物體所受的支撐力（浮力）不足...」
+            </div>
+            <div class="ans-comparison">
+                <div class="ans-box ans-student">
+                    <span class="ans-label" style="color:var(--wrong-color)">語心的答案：</span>
+                    「因為下面有大量的空氣冒出來，所以小船全都往下沉了。」
+                </div>
+                <div class="ans-box ans-correct">
+                    <span class="ans-label" style="color:var(--correct-color)">參考答案：</span>
+                    氣泡使水的平均密度變小，導致浮力變小，不足以支撐船重。
+                </div>
+            </div>
+            <div class="analysis">
+                <strong>💡 診斷：</strong> 語心只是在「重複題目現象」（有氣泡-&gt;沉下去），完全沒有解釋「為什麼」（密度變小）。這是邏輯推論失敗，未運用原文提供的科學原理。
+            </div>
+        </div>
+    </div>
+
+    <!-- Q16 -->
+    <div class="q-card">
+        <div class="q-header" onclick="toggleQ(this)">
+            <span>Q16. 純水 vs 鹽水浮力 <span class="q-tag tag-logic">觀念應用</span></span>
+            <span style="color:var(--wrong-color)">❌</span>
+        </div>
+        <div class="q-body">
+            <p><strong>題目：</strong>若將船從海水移至密度較小的純水中，船身露出水面的部分會變多還是變少？</p>
+            <div class="source-material">
+                <span class="source-label">📖 阿基米德原理：</span>
+                「液體密度越<strong>小</strong>，物體需要排開越多的水才能獲得足夠浮力，因此會沉得越<strong>深</strong>（露出越少）。」
+            </div>
+            <div class="ans-comparison">
+                <div class="ans-box ans-student">
+                    <span class="ans-label" style="color:var(--wrong-color)">語心的答案：</span>
+                    變多 (引用了錯誤的密度公式)
+                </div>
+                <div class="ans-box ans-correct">
+                    <span class="ans-label" style="color:var(--correct-color)">正確答案：</span>
+                    變少 (沉得更深)
+                </div>
+            </div>
+            <div class="analysis">
+                <strong>💡 診斷：</strong> 這是思維最混亂的一題。語心試圖背誦公式（提到固體密度=液體密度），但完全套錯情境。她記反了規則，誤以為密度小會浮得高。建議在家用鹽水和雞蛋做實驗來修正觀念。
+            </div>
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 40px; color: #999; font-size: 0.8rem;">
+        點擊題目欄可展開/收起詳情
+    </div>
+
+</div>
+
+<script>
+    function toggleQ(element) {
+        var card = element.parentElement;
+        var body = element.nextElementSibling;
+        
+        // Toggle active class
+        card.classList.toggle("active");
+        body.classList.toggle("active");
+    }
+</script>
+
+
+
+</body></html>
